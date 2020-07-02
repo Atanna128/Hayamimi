@@ -7,8 +7,9 @@ import { confirmAlert } from "react-confirm-alert";
 const UploadPost = () => {
   const { TextArea } = Input;
   const [status, setStatus] = useState("");
-  const [image, setImage] = useState();
+  const [image, setImage] = useState(null);
   const [imageList, setImageList] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   const uploadPost = async () => {
     let userDoc = await FirebaseController.db
@@ -30,28 +31,35 @@ const UploadPost = () => {
           },
         ],
       });
-    } else {
+    }
+    else {
+      // console.log(status);
+      if (!status && image === null) {
+        return;
+      }
+      console.log(status)
+      setSubmitting(true);
       if (image) {
         const random_name =
-          (Math.random().toString(36) + "00000000000000000").slice(2, 10) +
-          "." +
-          image.name.split(".").slice(-1);
+          (Math.random().toString(36) + '00000000000000000').slice(2, 10) +
+          '.' +
+          image.name.split('.').slice(-1);
         // console.log(random_name)
         const uploadTask = FirebaseController.storage
           .ref(`images/${random_name}`)
           .put(image.originFileObj);
 
         uploadTask.on(
-          "state_changed",
-          (snapshot) => {},
+          'state_changed',
+          (snapshot) => { },
           (error) => {
             // error function ....
-            console.log("Error: ", error);
+            console.log('Error: ', error);
           },
           () => {
             // complete function ....
             FirebaseController.storage
-              .ref("images")
+              .ref('images')
               .child(random_name)
               .getDownloadURL()
               .then((url) => {
@@ -60,7 +68,37 @@ const UploadPost = () => {
           }
         );
       } else {
-        uploadPosttoFireStore(null);
+        if (image) {
+          const random_name =
+            (Math.random().toString(36) + "00000000000000000").slice(2, 10) +
+            "." +
+            image.name.split(".").slice(-1);
+          // console.log(random_name)
+          const uploadTask = FirebaseController.storage
+            .ref(`images/${random_name}`)
+            .put(image.originFileObj);
+
+          uploadTask.on(
+            "state_changed",
+            (snapshot) => { },
+            (error) => {
+              // error function ....
+              console.log("Error: ", error);
+            },
+            () => {
+              // complete function ....
+              FirebaseController.storage
+                .ref("images")
+                .child(random_name)
+                .getDownloadURL()
+                .then((url) => {
+                  uploadPosttoFireStore(url);
+                });
+            }
+          );
+        } else {
+          uploadPosttoFireStore(null);
+        }
       }
     }
   };
@@ -73,11 +111,14 @@ const UploadPost = () => {
       image: url,
       uid: FirebaseController.getCurrentUser().uid,
     };
-    console.log(data);
+    // console.log(data);
     FirebaseController.uploadPost(data);
-    setStatus("");
-    setImage(null);
-    setImageList([]);
+    setTimeout(() => {
+      setSubmitting(false);
+      setStatus('');
+      setImage(null);
+      setImageList([]);
+    }, 1000);
   };
 
   const handleChange = (event) => {
@@ -130,9 +171,11 @@ const UploadPost = () => {
             </Button>
           </Upload>
           <Button
+            htmlType="submit"
             type="primary"
             style={{ float: "right", marginTop: 15 }}
             onClick={uploadPost}
+            loading={submitting}
           >
             Upload
           </Button>

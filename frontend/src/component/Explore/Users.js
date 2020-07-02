@@ -17,7 +17,7 @@ const Users = (props) => {
     const usersSnapshot = usersRef.docs.map((doc) => ({
       uid: doc.id,
       displayName: doc.data().displayName,
-      avatarURL: doc.data().avatarURL
+      avatarURL: doc.data().avatarURL,
     }));
     setUser(usersSnapshot);
   };
